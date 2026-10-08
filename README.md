@@ -5,7 +5,7 @@ A cloud-native **Task Manager** web application, built as the capstone project f
 project is the automated pipeline around it: Git, Jenkins, Docker, Kubernetes, Ansible,
 Terraform, Prometheus/Grafana, ELK/Fluentd, SonarQube and GitOps.
 
-> **Authors:** _Your Name (Roll No.)_, _Partner Name (Roll No.)_
+> **Authors:** nyasha (2301730085)
 > **Course:** B.Tech CSE, Semester VII, ENSP461
 > **Version:** 1.0.0
 
