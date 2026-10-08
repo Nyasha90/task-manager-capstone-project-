@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from functools import wraps
 
 from flask import (Blueprint, current_app, flash, jsonify, redirect,
@@ -9,11 +9,103 @@ from .models import Task, User, db
 
 bp = Blueprint("main", __name__)
 VALID_STATUS = {"todo", "in_progress", "done"}
+VALID_PRIORITY = {"high", "medium", "low"}
 
 
 @bp.app_context_processor
 def inject_version():
-    return {"version": current_app.config["APP_VERSION"]}
+    user = None
+    if "user_id" in session:
+        user = db.session.get(User, session["user_id"])
+    return {
+        "version": current_app.config["APP_VERSION"],
+        "current_user": user
+    }
+
+
+def seed_sample_tasks(user_id):
+    """Seed a realistic initial dataset of tasks for the specified user."""
+    today = date.today()
+    sample_data = [
+        {
+            "title": "Deploy Kubernetes Cluster on AWS EKS",
+            "description": "Provision EKS cluster using Terraform, configure VPC, subnets, and worker node groups for production workload.",
+            "status": "in_progress",
+            "priority": "high",
+            "category": "DevOps",
+            "due_date": today + timedelta(days=3)
+        },
+        {
+            "title": "Configure CI/CD Pipeline in Jenkins",
+            "description": "Setup Jenkins multibranch pipeline with automated unit testing, SonarQube quality gate, and Docker image build.",
+            "status": "done",
+            "priority": "high",
+            "category": "CI/CD",
+            "due_date": today - timedelta(days=1)
+        },
+        {
+            "title": "Implement Session & Token Security",
+            "description": "Audit authentication routes, add password hashing, session timeout, and RBAC middleware.",
+            "status": "done",
+            "priority": "high",
+            "category": "Security",
+            "due_date": today - timedelta(days=2)
+        },
+        {
+            "title": "Setup Prometheus & Grafana Monitoring",
+            "description": "Export app /metrics endpoint, configure Prometheus scrapers, and build Grafana dashboards for latency & error rate.",
+            "status": "in_progress",
+            "priority": "medium",
+            "category": "Monitoring",
+            "due_date": today + timedelta(days=5)
+        },
+        {
+            "title": "Configure ELK Stack Log Aggregation",
+            "description": "Setup Logstash & Elasticsearch pipeline to ingest and parse structured JSON application logs.",
+            "status": "todo",
+            "priority": "medium",
+            "category": "Logging",
+            "due_date": today + timedelta(days=7)
+        },
+        {
+            "title": "Redesign Dark Mode UI & Glassmorphism Dashboard",
+            "description": "Enhance user experience with modern dark theme palette, stats panel, filter bar, and interactive task cards.",
+            "status": "done",
+            "priority": "low",
+            "category": "Frontend",
+            "due_date": today
+        },
+        {
+            "title": "Database Migration & Connection Pooling",
+            "description": "Provision PostgreSQL database container, execute Alembic migrations, and configure SQLAlchemy connection pools.",
+            "status": "todo",
+            "priority": "high",
+            "category": "Database",
+            "due_date": today + timedelta(days=10)
+        },
+        {
+            "title": "ArgoCD GitOps Deployment Setup",
+            "description": "Connect ArgoCD to GitHub repository and configure automated sync policies for Kubernetes manifests.",
+            "status": "todo",
+            "priority": "low",
+            "category": "DevOps",
+            "due_date": today + timedelta(days=12)
+        }
+    ]
+
+    for item in sample_data:
+        task = Task(
+            user_id=user_id,
+            title=item["title"],
+            description=item["description"],
+            status=item["status"],
+            priority=item["priority"],
+            category=item["category"],
+            due_date=item["due_date"]
+        )
+        db.session.add(task)
+    db.session.commit()
+
 
 
 def login_required(f):
@@ -39,7 +131,7 @@ def health():
 
 
 # ---------- auth helpers ----------
-def _register(username, password):
+def _register(username, password, auto_seed=True):
     username = (username or "").strip()
     if not username or not password or len(password) < 6:
         return None, "username and password (min 6 chars) are required"
@@ -49,6 +141,13 @@ def _register(username, password):
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
+
+    if auto_seed:
+        try:
+            seed_sample_tasks(user.id)
+        except Exception as ex:
+            current_app.logger.warning("Failed to auto seed tasks: %s", ex)
+
     current_app.logger.info("User registered: %s", username)
     return user, None
 
@@ -66,7 +165,7 @@ def _authenticate(username, password):
 @bp.post("/api/auth/register")
 def api_register():
     data = request.get_json(silent=True) or {}
-    user, err = _register(data.get("username"), data.get("password"))
+    user, err = _register(data.get("username"), data.get("password"), auto_seed=False)
     if err:
         return jsonify(error=err), 400
     return jsonify(id=user.id, username=user.username), 201
@@ -95,13 +194,20 @@ def _apply(task, data, creating):
             raise ValueError("title is required")
         task.title = title
     if "description" in data:
-        task.description = data["description"] or ""
-    if "status" in data:
+        task.description = data.get("description") or ""
+    if "status" in data and data["status"]:
         if data["status"] not in VALID_STATUS:
             raise ValueError("status must be one of: " + ", ".join(sorted(VALID_STATUS)))
         task.status = data["status"]
+    if "priority" in data and data["priority"]:
+        if data["priority"] not in VALID_PRIORITY:
+            raise ValueError("priority must be one of: " + ", ".join(sorted(VALID_PRIORITY)))
+        task.priority = data["priority"]
+    if "category" in data and data["category"]:
+        task.category = data["category"].strip() or "General"
     if "due_date" in data:
         task.due_date = date.fromisoformat(data["due_date"]) if data["due_date"] else None
+
 
 
 def _own_task(task_id):
@@ -175,11 +281,11 @@ def index():
 @bp.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        user, err = _register(request.form.get("username"), request.form.get("password"))
+        user, err = _register(request.form.get("username"), request.form.get("password"), auto_seed=True)
         if err:
             flash(err, "danger")
         else:
-            flash("Account created. Please log in.", "success")
+            flash("Account created! Sample dataset loaded. Please log in.", "success")
             return redirect(url_for("main.login"))
     return render_template("register.html")
 
@@ -191,6 +297,18 @@ def login():
             return redirect(url_for("main.tasks_page"))
         flash("Invalid username or password", "danger")
     return render_template("login.html")
+
+
+@bp.route("/login/demo", methods=["GET", "POST"])
+def login_demo():
+    admin = User.query.filter_by(username="admin").first()
+    if not admin:
+        admin, _ = _register("admin", "password123", auto_seed=True)
+    elif not Task.query.filter_by(user_id=admin.id).first():
+        seed_sample_tasks(admin.id)
+    session["user_id"] = admin.id
+    flash("Logged in as Demo Admin", "success")
+    return redirect(url_for("main.tasks_page"))
 
 
 @bp.get("/logout")
@@ -208,11 +326,36 @@ def tasks_page():
             _apply(task, request.form.to_dict(), creating=True)
             db.session.add(task)
             db.session.commit()
+            flash("Task created successfully!", "success")
         except ValueError as e:
             flash(str(e), "danger")
         return redirect(url_for("main.tasks_page"))
+
     tasks = Task.query.filter_by(user_id=session["user_id"]).order_by(Task.id.desc()).all()
-    return render_template("tasks.html", tasks=tasks)
+    
+    total = len(tasks)
+    done_count = sum(1 for t in tasks if t.status == "done")
+    in_progress_count = sum(1 for t in tasks if t.status == "in_progress")
+    todo_count = sum(1 for t in tasks if t.status == "todo")
+    completion_rate = round((done_count / total * 100)) if total > 0 else 0
+
+    stats = {
+        "total": total,
+        "done": done_count,
+        "in_progress": in_progress_count,
+        "todo": todo_count,
+        "completion_rate": completion_rate
+    }
+
+    return render_template("tasks.html", tasks=tasks, stats=stats)
+
+
+@bp.post("/tasks/seed")
+@login_required
+def seed_dataset_route():
+    seed_sample_tasks(session["user_id"])
+    flash("Sample dataset loaded successfully!", "success")
+    return redirect(url_for("main.tasks_page"))
 
 
 @bp.post("/tasks/<int:task_id>/toggle")
@@ -225,6 +368,31 @@ def toggle_task(task_id):
     return redirect(url_for("main.tasks_page"))
 
 
+@bp.post("/tasks/<int:task_id>/update_status")
+@login_required
+def update_task_status(task_id):
+    task = _own_task(task_id)
+    new_status = request.form.get("status")
+    if task and new_status in VALID_STATUS:
+        task.status = new_status
+        db.session.commit()
+    return redirect(url_for("main.tasks_page"))
+
+
+@bp.post("/tasks/<int:task_id>/edit")
+@login_required
+def edit_task_web(task_id):
+    task = _own_task(task_id)
+    if task:
+        try:
+            _apply(task, request.form.to_dict(), creating=False)
+            db.session.commit()
+            flash("Task updated successfully!", "success")
+        except ValueError as e:
+            flash(str(e), "danger")
+    return redirect(url_for("main.tasks_page"))
+
+
 @bp.post("/tasks/<int:task_id>/delete")
 @login_required
 def delete_task_web(task_id):
@@ -232,4 +400,6 @@ def delete_task_web(task_id):
     if task:
         db.session.delete(task)
         db.session.commit()
+        flash("Task deleted.", "info")
     return redirect(url_for("main.tasks_page"))
+

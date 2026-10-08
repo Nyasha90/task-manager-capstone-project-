@@ -24,6 +24,8 @@ class Task(db.Model):
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, default="")
     status = db.Column(db.String(20), default="todo", nullable=False)
+    priority = db.Column(db.String(20), default="medium", nullable=False)
+    category = db.Column(db.String(50), default="General", nullable=False)
     due_date = db.Column(db.Date, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -33,6 +35,9 @@ class Task(db.Model):
             "title": self.title,
             "description": self.description,
             "status": self.status,
+            "priority": self.priority or "medium",
+            "category": self.category or "General",
             "due_date": self.due_date.isoformat() if self.due_date else None,
-            "created_at": self.created_at.isoformat(),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+

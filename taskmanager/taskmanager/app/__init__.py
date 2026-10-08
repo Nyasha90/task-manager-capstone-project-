@@ -43,6 +43,27 @@ def create_app(config=None):
 
     with app.app_context():
         db.create_all()
+        try:
+            inspector = db.inspect(db.engine)
+            if "task" in inspector.get_table_names():
+                columns = [c["name"] for c in inspector.get_columns("task")]
+                if "priority" not in columns:
+                    db.session.execute(text("ALTER TABLE task ADD COLUMN priority VARCHAR(20) DEFAULT 'medium' NOT NULL"))
+                if "category" not in columns:
+                    db.session.execute(text("ALTER TABLE task ADD COLUMN category VARCHAR(50) DEFAULT 'General' NOT NULL"))
+                db.session.commit()
+        except Exception as ex:
+            app.logger.warning("Migration check skipped: %s", ex)
+
+        from .models import User
+        from .routes import _register
+        try:
+            if not User.query.first():
+                _register("admin", "password123", auto_seed=True)
+        except Exception as e:
+            app.logger.warning("Could not auto-seed admin user: %s", e)
+
+
 
     if app.config["METRICS"]:
         from prometheus_flask_exporter import PrometheusMetrics

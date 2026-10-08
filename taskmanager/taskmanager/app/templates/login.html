@@ -1,12 +1,54 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card p-4 mx-auto" style="max-width: 400px;">
-  <h4>Login</h4>
-  <form method="post">
-    <input class="form-control mb-2" name="username" placeholder="Username" required>
-    <input class="form-control mb-3" type="password" name="password" placeholder="Password" required>
-    <button class="btn btn-primary w-100">Login</button>
-  </form>
-  <p class="mt-3 mb-0"><a href="{{ url_for('main.register') }}">Create an account</a></p>
+<div class="d-flex justify-content-center align-items-center py-4">
+  <div class="glass-card p-4 p-md-5 w-100 shadow-lg" style="max-width: 440px;">
+    <!-- Brand Header -->
+    <div class="text-center mb-4">
+      <div class="d-inline-flex align-items-center justify-content-center rounded-4 mb-3 p-3" style="background: var(--accent-gradient); width: 64px; height: 64px; box-shadow: var(--accent-glow);">
+        <i class="bi bi-shield-lock-fill text-white fs-2"></i>
+      </div>
+      <h3 class="fw-bold mb-1">Welcome Back</h3>
+      <p class="text-muted small">Sign in to access your TaskMaster dashboard</p>
+    </div>
+
+    <!-- Login Form -->
+    <form method="post" action="{{ url_for('main.login') }}">
+      <div class="mb-3">
+        <label class="form-label small fw-semibold text-muted">Username</label>
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-secondary text-secondary"><i class="bi bi-person"></i></span>
+          <input type="text" class="form-control bg-transparent border-secondary" name="username" placeholder="Enter your username" required autofocus>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label small fw-semibold text-muted">Password</label>
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-secondary text-secondary"><i class="bi bi-key"></i></span>
+          <input type="password" class="form-control bg-transparent border-secondary" name="password" placeholder="Enter your password" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-gradient w-100 py-2 rounded-3 mb-3">
+        Sign In <i class="bi bi-arrow-right ms-1"></i>
+      </button>
+    </form>
+
+    <div class="position-relative text-center my-3">
+      <hr class="border-secondary opacity-25">
+      <span class="position-absolute top-50 start-50 translate-middle px-3 small text-muted bg-body">OR</span>
+    </div>
+
+    <!-- One-Click Demo Admin Login -->
+    <form method="post" action="{{ url_for('main.login_demo') }}">
+      <button type="submit" class="btn btn-outline-info w-100 py-2 rounded-3 small d-flex align-items-center justify-content-center gap-2">
+        <i class="bi bi-lightning-charge-fill text-warning"></i> One-Click Demo Admin Login
+      </button>
+    </form>
+
+    <p class="text-center mt-4 mb-0 small text-muted">
+      Don't have an account? <a href="{{ url_for('main.register') }}" class="text-indigo fw-bold text-decoration-none">Create an Account</a>
+    </p>
+  </div>
 </div>
 {% endblock %}

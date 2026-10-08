@@ -1,23 +1,290 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Task Manager</title>
+  <title>Task Manager — DevOps & Automation Lab</title>
+  <!-- Google Fonts & Bootstrap 5.3 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    :root {
+      --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading: 'Outfit', sans-serif;
+      
+      /* Dark Mode Palette (Default) */
+      --bg-body: #0b0f19;
+      --bg-surface: rgba(17, 24, 39, 0.75);
+      --bg-surface-hover: rgba(31, 41, 55, 0.85);
+      --border-color: rgba(255, 255, 255, 0.09);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+      
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      --accent-glow: 0 0 20px rgba(99, 102, 241, 0.35);
+    }
+
+    [data-bs-theme="light"] {
+      --bg-body: #f8fafc;
+      --bg-surface: rgba(255, 255, 255, 0.9);
+      --bg-surface-hover: #ffffff;
+      --border-color: rgba(0, 0, 0, 0.08);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --card-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.12) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    h1, h2, h3, h4, h5, h6, .navbar-brand {
+      font-family: var(--font-heading);
+    }
+
+    /* Glassmorphism Components */
+    .glass-nav {
+      background: rgba(11, 15, 25, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    [data-bs-theme="light"] .glass-nav {
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .glass-card {
+      background: var(--bg-surface);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+
+    .glass-card:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-gradient {
+      background: var(--accent-gradient);
+      color: #ffffff;
+      border: none;
+      font-weight: 600;
+      box-shadow: var(--accent-glow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-gradient:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 25px rgba(99, 102, 241, 0.5);
+      color: #ffffff;
+    }
+
+    /* Status Badges */
+    .badge-todo {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .badge-in_progress {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .badge-done {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    /* Priority Badges */
+    .badge-priority-high {
+      background: rgba(244, 63, 94, 0.15);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.3);
+    }
+    .badge-priority-medium {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .badge-priority-low {
+      background: rgba(6, 182, 212, 0.15);
+      color: #22d3ee;
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+
+    .pulsing-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #10b981;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+
+    .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      border-radius: 50px;
+      padding: 6px 14px;
+      transition: all 0.2s ease;
+    }
+    .theme-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+  </style>
 </head>
-<body class="bg-light">
-<nav class="navbar navbar-dark bg-dark mb-4">
+<body>
+
+<!-- Glass Navbar -->
+<nav class="navbar navbar-expand-lg glass-nav sticky-top py-3 mb-4">
   <div class="container">
-    <span class="navbar-brand">Task Manager <span class="badge bg-info">v{{ version }}</span></span>
-    {% if session.get('user_id') %}<a class="btn btn-outline-light btn-sm" href="{{ url_for('main.logout') }}">Logout</a>{% endif %}
+    <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-decoration-none" href="{{ url_for('main.index') }}">
+      <div class="d-flex align-items-center justify-content-center rounded-3 bg-indigo p-2" style="background: var(--accent-gradient); width: 36px; height: 36px;">
+        <i class="bi bi-kanban-fill text-white fs-5"></i>
+      </div>
+      <span class="fs-4 bg-gradient text-transparent bg-clip-text" style="background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">TaskMaster</span>
+      <span class="badge rounded-pill bg-dark border border-secondary text-secondary small px-2 py-1">
+        <span class="pulsing-dot me-1"></span> v{{ version }}
+      </span>
+    </a>
+
+    <div class="d-flex align-items-center gap-3">
+      <!-- Dark / Light Theme Toggle -->
+      <button class="theme-toggle-btn d-flex align-items-center gap-2 small fw-medium" id="themeToggleBtn" onclick="toggleTheme()">
+        <i class="bi bi-moon-stars-fill text-warning" id="themeIcon"></i>
+        <span id="themeLabel">Dark</span>
+      </button>
+
+      {% if session.get('user_id') %}
+        <!-- Seed Sample Dataset Button -->
+        <form method="post" action="{{ url_for('main.seed_dataset_route') }}" class="d-none d-sm-inline">
+          <button type="submit" class="btn btn-outline-primary btn-sm rounded-pill d-flex align-items-center gap-1" title="Load demo tasks">
+            <i class="bi bi-database-add"></i> Seed Dataset
+          </button>
+        </form>
+
+        <div class="dropdown">
+          <button class="btn btn-dark btn-sm rounded-pill dropdown-toggle d-flex align-items-center gap-2 border border-secondary px-3 py-1" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle text-indigo fs-6"></i>
+            <span>{{ current_user.username if current_user else 'User' }}</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end glass-card p-2 shadow-lg">
+            <li>
+              <form method="post" action="{{ url_for('main.seed_dataset_route') }}" class="d-block d-sm-none">
+                <button type="submit" class="dropdown-item text-primary d-flex align-items-center gap-2 rounded">
+                  <i class="bi bi-database-add"></i> Seed Dataset
+                </button>
+              </form>
+            </li>
+            <li><hr class="dropdown-divider border-secondary my-1"></li>
+            <li>
+              <a class="dropdown-item text-danger d-flex align-items-center gap-2 rounded" href="{{ url_for('main.logout') }}">
+                <i class="bi bi-box-arrow-right"></i> Logout
+              </a>
+            </li>
+          </ul>
+        </div>
+      {% else %}
+        <a class="btn btn-outline-light btn-sm rounded-pill px-3" href="{{ url_for('main.login') }}">Login</a>
+        <a class="btn btn-gradient btn-sm rounded-pill px-3" href="{{ url_for('main.register') }}">Register</a>
+      {% endif %}
+    </div>
   </div>
 </nav>
-<div class="container" style="max-width: 800px;">
+
+<!-- Main Container -->
+<main class="container pb-5 flex-grow-1" style="max-width: 1000px;">
+  <!-- Flash Messages -->
   {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for cat, msg in messages %}<div class="alert alert-{{ cat }}">{{ msg }}</div>{% endfor %}
+    {% if messages %}
+      <div class="mb-4">
+        {% for cat, msg in messages %}
+          <div class="alert alert-{{ cat if cat != 'danger' else 'danger' }} alert-dismissible fade show glass-card border-0 d-flex align-items-center gap-2 shadow-sm" role="alert">
+            <i class="bi bi-{{ 'check-circle-fill text-success' if cat == 'success' else 'exclamation-triangle-fill text-danger' }} fs-5"></i>
+            <div>{{ msg }}</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
   {% endwith %}
+
   {% block content %}{% endblock %}
-</div>
+</main>
+
+<!-- Footer -->
+<footer class="glass-nav py-3 mt-auto text-center text-muted small">
+  <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+    <div>Task Manager — DevOps & Automation Lab Capstone Project</div>
+    <div class="d-flex align-items-center gap-3">
+      <a href="/health" target="_blank" class="text-secondary text-decoration-none"><i class="bi bi-heart-pulse-fill text-success"></i> Health Probe</a>
+      <a href="/metrics" target="_blank" class="text-secondary text-decoration-none"><i class="bi bi-graph-up-arrow text-info"></i> Prometheus Metrics</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-bs-theme', theme);
+    const icon = document.getElementById('themeIcon');
+    const label = document.getElementById('themeLabel');
+    if (theme === 'dark') {
+      icon.className = 'bi bi-moon-stars-fill text-warning';
+      label.textContent = 'Dark';
+    } else {
+      icon.className = 'bi bi-sun-fill text-warning';
+      label.textContent = 'Light';
+    }
+  }
+
+  function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+    const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('taskmaster_theme', nextTheme);
+    applyTheme(nextTheme);
+  }
+
+  // Load saved theme on startup
+  const savedTheme = localStorage.getItem('taskmaster_theme') || 'dark';
+  applyTheme(savedTheme);
+</script>
 </body>
 </html>
